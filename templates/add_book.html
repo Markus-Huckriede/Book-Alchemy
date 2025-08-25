@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Book</title>
+</head>
+<body>
+<h1>Add Book</h1>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul>
+    {% for category, message in messages %}
+      <li style="color: {% if category == 'success' %}green{% else %}red{% endif %};">
+        {{ message }}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<a href="{{ url_for('home') }}"><button>🏠 Back to Home</button></a>
+
+<form method="POST" action="{{ url_for('add_book') }}">
+    <p>
+        <label>Title:</label>
+        <input type="text" name="title" required>
+    </p>
+    <p>
+        <label>ISBN:</label>
+        <input type="text" name="isbn" required>
+    </p>
+    <p>
+        <label>Publication Year:</label>
+        <input type="number" name="publication_year">
+    </p>
+    <p>
+        <label>Author:</label>
+        <select name="author_id" required>
+            {% for author in authors %}
+                <option value="{{ author.id }}">{{ author.name }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <p>
+        <label>Rating (1-10):</label>
+        <input type="number" name="rating" min="1" max="10">
+    </p>
+    <button type="submit">Add Book</button>
+</form>
+</body>
+</html>
