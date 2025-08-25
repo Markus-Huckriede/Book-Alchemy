@@ -5,7 +5,6 @@ import os
 
 # Flask app
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
 
 # Database config
 basedir = os.path.abspath(os.path.dirname(__file__))
