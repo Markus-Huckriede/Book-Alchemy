@@ -20,11 +20,12 @@ class Author(db.Model):
 class Book(db.Model):
     __tablename__ = 'books'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    isbn = db.Column(db.Text, nullable=False)
-    title = db.Column(db.String, nullable=False)
+    isbn = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
     publication_year = db.Column(db.Integer, nullable=True)
-    rating = db.Column(db.Integer, nullable=True)  # 1-10 optional
+    rating = db.Column(db.Integer, nullable=True)
     author_id = db.Column(db.Integer, db.ForeignKey('authors.id'), nullable=False)
+    cover_url = db.Column(db.String(250), nullable=True)
 
     def __repr__(self):
         return f"<Book {self.title} ({self.rating})>"

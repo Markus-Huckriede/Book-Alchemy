@@ -1,41 +1,28 @@
-from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 import os
 
-# Flask app
+from data_models import db, Author, Book
+
+# Flask app, Secret Key
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "mysecretkey")
 
 # Database config
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(basedir, 'library.sqlite')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+# SQLAlchemy init with app
+db.init_app(app)
+
 with app.app_context():
-  db.create_all()
+    db.create_all()
 
-# Models
-class Author(db.Model):
-    __tablename__ = 'authors'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    birth_date = db.Column(db.Date)
-    date_of_death = db.Column(db.Date)
-    books = db.relationship('Book', backref='author', lazy=True, cascade="all, delete-orphan")
+'''
+Routes
+'''
 
-class Book(db.Model):
-    __tablename__ = 'books'
-    id = db.Column(db.Integer, primary_key=True)
-    isbn = db.Column(db.String(20), nullable=False)
-    title = db.Column(db.String(150), nullable=False)
-    publication_year = db.Column(db.Integer)
-    author_id = db.Column(db.Integer, db.ForeignKey('authors.id'), nullable=False)
-    rating = db.Column(db.Integer)  # optional 1-10
-
-# Routes
-
-# Home page with sorting and search
 @app.route('/')
 def home():
     sort_by = request.args.get('sort_by', 'title')
@@ -88,12 +75,16 @@ def add_book():
         author_id = request.form.get('author_id')
         rating = request.form.get('rating')
 
+        # Cover-URL automatisch generieren
+        cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg" if isbn else None
+
         book = Book(
             title=title,
             isbn=isbn,
             publication_year=int(publication_year) if publication_year else None,
             author_id=int(author_id),
-            rating=int(rating) if rating else None
+            rating=int(rating) if rating else None,
+            cover_url=cover_url
         )
         db.session.add(book)
         db.session.commit()
@@ -142,6 +133,4 @@ def delete_author(author_id):
 
 # Run app
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
