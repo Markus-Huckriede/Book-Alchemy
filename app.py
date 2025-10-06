@@ -45,13 +45,18 @@ def home():
     return render_template('home.html', books=books, sort_by=sort_by,
                            search_query=search_query, search_field=search_field)
 
-# Add Author
+
 @app.route('/add_author', methods=['GET', 'POST'])
 def add_author():
     if request.method == 'POST':
-        name = request.form.get('name')
+        name = request.form.get('name').strip()
         birth_date_str = request.form.get('birth_date')
         date_of_death_str = request.form.get('date_of_death')
+
+        existing_author = Author.query.filter_by(name=name).first()
+        if existing_author:
+            flash(f"Author '{name}' already exists!", "warning")
+            return redirect(url_for('add_author'))
 
         birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date() if birth_date_str else None
         date_of_death = datetime.strptime(date_of_death_str, '%Y-%m-%d').date() if date_of_death_str else None
@@ -64,25 +69,37 @@ def add_author():
 
     return render_template('add_author.html')
 
-# Add Book
+
 @app.route('/add_book', methods=['GET', 'POST'])
 def add_book():
     authors = Author.query.all()
     if request.method == 'POST':
-        title = request.form.get('title')
-        isbn = request.form.get('isbn')
+        title = request.form.get('title').strip()
+        isbn = request.form.get('isbn').strip() if request.form.get('isbn') else None
         publication_year = request.form.get('publication_year')
-        author_id = request.form.get('author_id')
+        author_id = int(request.form.get('author_id'))
         rating = request.form.get('rating')
 
-        # Cover-URL automatisch generieren
+        existing_book = Book.query.filter_by(title=title, author_id=author_id).first()
+        if existing_book:
+            flash(f"Book '{title}' already exists for this author!", "warning")
+            return redirect(url_for('add_book'))
+
+        """
+        checking unique ISBN
+        """
+        if isbn and Book.query.filter_by(isbn=isbn).first():
+            flash(f"A book with ISBN '{isbn}' already exists!", "warning")
+            return redirect(url_for('add_book'))
+
+        # Cover URL automatically generated
         cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg" if isbn else None
 
         book = Book(
             title=title,
             isbn=isbn,
             publication_year=int(publication_year) if publication_year else None,
-            author_id=int(author_id),
+            author_id=author_id,
             rating=int(rating) if rating else None,
             cover_url=cover_url
         )
@@ -93,19 +110,19 @@ def add_book():
 
     return render_template('add_book.html', authors=authors)
 
-# Book detail
+
 @app.route('/book/<int:book_id>')
 def book_detail(book_id):
     book = Book.query.get_or_404(book_id)
     return render_template('book_detail.html', book=book)
 
-# Author detail
+
 @app.route('/author/<int:author_id>')
 def author_detail(author_id):
     author = Author.query.get_or_404(author_id)
     return render_template('author_detail.html', author=author)
 
-# Delete Book
+
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 def delete_book(book_id):
     book = Book.query.get_or_404(book_id)
@@ -122,7 +139,7 @@ def delete_book(book_id):
 
     return redirect(url_for('home'))
 
-# Delete Author
+
 @app.route('/author/<int:author_id>/delete', methods=['POST'])
 def delete_author(author_id):
     author = Author.query.get_or_404(author_id)
@@ -131,6 +148,6 @@ def delete_author(author_id):
     flash(f"Author '{author.name}' and all their books were deleted.", "success")
     return redirect(url_for('home'))
 
-# Run app
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
